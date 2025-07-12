@@ -1,0 +1,32 @@
+[
+  {
+    "id": 8,
+    "name": "حسام الدين طالب",
+    "fullName": "حسام الدين طالب بن عبد الرحمن",
+    "phone": "0543210987",
+    "phone2": "",
+    "email": "houssameddine.taleb@gmail.com",
+    "address": "18 شارع الشهيد بلمهدي، باتنة",
+    "currentCity": "باتنة",
+    "currentJob": "طالب جامعي",
+    "work": false,
+    "study": true,
+    "facebook": "Houssam Eddine Taleb",
+    "branchCenter": "فرع كركورة",
+    "memerYear": "2025",
+    "memerNumber": 303,
+    "attendanceThisYear": true,
+    "lastEducation": "ليسانس",
+    "studentUniversity": "جامعة باتنة",
+    "Speciality": "اللغة العربية",
+    "fieldActivity": "التدريس",
+    "activity": "معلم مساعد",
+    "graduationDate": "15/06/2025",
+    "memTeacher": "عبد الرحمن قاسمي",
+    "memCenter": "باتنة المركز",
+    "certifiedBy": "الشيخ عبد الرحمن",
+    "tartilMemYear": 2025,
+    "profileImage": "",
+    "birthDate": "08/09/2002"
+  }
+]

@@ -1,0 +1,71 @@
+
+export const updateStudent = async (studentId, student) => {
+  try {
+    if (!window.gapi || !window.gapi.client) {
+      throw new Error("Google API not initialized");
+    }
+
+    const response = await window.gapi.client.sheets.spreadsheets.values.get({
+      spreadsheetId: SPREADSHEET_ID,
+      range: `${SHEETS.MahdaraMemorizedStudent}!A4:AG`,
+    });
+
+    const rows = response.result.values || [];
+    const rowIndex = rows.findIndex((row) => row[0] === studentId);
+
+    if (rowIndex === -1) {
+      throw new Error(`Student with ID ${studentId} not found`);
+    }
+
+    await window.gapi.client.sheets.spreadsheets.values.update({
+      spreadsheetId: SPREADSHEET_ID,
+      range: `${SHEETS.MahdaraMemorizedStudent}!${rowIndex + 4}:${
+        rowIndex + 4
+      }`,
+      valueInputOption: "USER_ENTERED",
+      resource: { values: [student] },
+    });
+
+    // Refresh the profiles file after update
+    await fetchStudents(true);
+  } catch (error) {
+    console.error("Error updating student:", error);
+    throw error;
+  }
+};
+
+/* export const addStudent = async (student) => {
+  try {
+    if (!window.gapi || !window.gapi.client) {
+      throw new Error("Google API not initialized");
+    }
+
+    const studentsResponse =
+      await window.gapi.client.sheets.spreadsheets.values.get({
+        spreadsheetId: SPREADSHEET_ID,
+        range: `${SHEETS.MahdaraMemorizedStudent}!A4:A`,
+      });
+
+    const studentRows = studentsResponse.result.values || [];
+    const lastStudentId =
+      studentRows.length > 0 ? studentRows[studentRows.length - 1][0] : "0";
+    const newStudentNumber = parseInt(lastStudentId.replace("S", "")) + 1;
+    const newStudentId = `S${newStudentNumber.toString()}`;
+
+    await window.gapi.client.sheets.spreadsheets.values.append({
+      spreadsheetId: SPREADSHEET_ID,
+      range: `${SHEETS.MahdaraMemorizedStudent}!A4`,
+      valueInputOption: "USER_ENTERED",
+      insertDataOption: "INSERT_ROWS",
+      resource: { values: [[newStudentId, ...student]] },
+    });
+
+    // Refresh the profiles file after adding
+    await fetchStudents(true);
+
+    return newStudentId;
+  } catch (error) {
+    console.error("Error adding student:", error);
+    throw error;
+  }
+}; */
