@@ -796,13 +796,13 @@ const StudentManagement = ({ setNavBarShown }) => {
                       {/* Contact Info - Hidden on mobile */}
                       <td className="px-6 py-3 hidden sm:table-cell">
                         <div className="space-y-1">
-                          <div className="flex items-center gap-2 text-xs">
+                          <div dir="ltr" className=" ltr text-left flex items-center gap-2 text-xs">
                             <span className="text-gray-400">📞</span>
                             <span>{student.phone}</span>
                           </div>
                           <div className="flex items-center gap-2 text-xs text-gray-500">
                             <span className="text-gray-400">✉️</span>
-                            <span className="truncate max-w-32">
+                            <span className="truncate max-w-40">
                               {student.email}
                             </span>
                           </div>
