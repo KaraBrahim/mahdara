@@ -91,17 +91,24 @@ export const updateStudent = async (studentData) => {
       ) {
         console.log("🖼️ Uploading new profile image to Cloudinary...");
         const uploadStart = performance.now();
-        
-        profileImageUrl = await uploadImageToCloudinary(studentData.profileImage);
-        
+
+        profileImageUrl = await uploadImageToCloudinary(
+          studentData.profileImage
+        );
+
         const uploadEnd = performance.now();
-        console.log(`✅ Image uploaded to Cloudinary in ${(uploadEnd - uploadStart).toFixed(2)}ms:`, profileImageUrl);
+        console.log(
+          `✅ Image uploaded to Cloudinary in ${(
+            uploadEnd - uploadStart
+          ).toFixed(2)}ms:`,
+          profileImageUrl
+        );
       }
 
       // More efficient approach: Use a smaller range or implement row tracking
       console.log("🔍 Searching for student row...");
       const searchStart = performance.now();
-      
+
       // Try to get a reasonable range first (e.g., first 1000 rows)
       const response = await window.gapi.client.sheets.spreadsheets.values.get({
         spreadsheetId: SPREADSHEET_ID,
@@ -120,15 +127,20 @@ export const updateStudent = async (studentData) => {
       }
 
       const searchEnd = performance.now();
-      console.log(`🔍 Search completed in ${(searchEnd - searchStart).toFixed(2)}ms`);
+      console.log(
+        `🔍 Search completed in ${(searchEnd - searchStart).toFixed(2)}ms`
+      );
 
       if (rowNumber === -1) {
         // If not found in first 1000 rows, try a broader search
-        console.log("🔍 Student not found in first 1000 rows, searching entire sheet...");
-        const fullResponse = await window.gapi.client.sheets.spreadsheets.values.get({
-          spreadsheetId: SPREADSHEET_ID,
-          range: `${SHEETS.MahdaraMemorizedStudent}!A:A`,
-        });
+        console.log(
+          "🔍 Student not found in first 1000 rows, searching entire sheet..."
+        );
+        const fullResponse =
+          await window.gapi.client.sheets.spreadsheets.values.get({
+            spreadsheetId: SPREADSHEET_ID,
+            range: `${SHEETS.MahdaraMemorizedStudent}!A:A`,
+          });
 
         const allRows = fullResponse.result.values || [];
         for (let i = 0; i < allRows.length; i++) {
@@ -183,21 +195,28 @@ export const updateStudent = async (studentData) => {
         studentData.jobType === "طالب" ? studentData.studentSpeciality : null, // AF: Student Speciality
       ];
 
-      console.log("📝 Preparing to update row with data:", updateData.slice(0, 5), "...");
+      console.log(
+        "📝 Preparing to update row with data:",
+        updateData.slice(0, 5),
+        "..."
+      );
 
       // Update the student in the spreadsheet
       const updateStart = performance.now();
-      const updateResponse = await window.gapi.client.sheets.spreadsheets.values.update({
-        spreadsheetId: SPREADSHEET_ID,
-        range: `${SHEETS.MahdaraMemorizedStudent}!A${rowNumber}:AG${rowNumber}`,
-        valueInputOption: "RAW",
-        resource: {
-          values: [updateData],
-        },
-      });
+      const updateResponse =
+        await window.gapi.client.sheets.spreadsheets.values.update({
+          spreadsheetId: SPREADSHEET_ID,
+          range: `${SHEETS.MahdaraMemorizedStudent}!A${rowNumber}:AG${rowNumber}`,
+          valueInputOption: "RAW",
+          resource: {
+            values: [updateData],
+          },
+        });
 
       const updateEnd = performance.now();
-      console.log(`✅ Sheet update completed in ${(updateEnd - updateStart).toFixed(2)}ms`);
+      console.log(
+        `✅ Sheet update completed in ${(updateEnd - updateStart).toFixed(2)}ms`
+      );
       console.log("✅ Student updated successfully in Google Sheets");
       console.log("Response:", updateResponse);
 
@@ -211,14 +230,13 @@ export const updateStudent = async (studentData) => {
 
     // Race between the update operation and timeout
     return await Promise.race([updatePromise(), timeoutPromise]);
-
   } catch (error) {
     console.error("❌ Error updating student in Google Sheets:", error);
     console.error("Error details:", {
       message: error.message,
       stack: error.stack,
       studentId: studentData.id,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
     throw error;
   }
@@ -992,7 +1010,7 @@ export const addStudent = async (studentData) => {
   }
 };
 
-export const uploadImageToCloudinary = async (imageFile) => {
+/* export const uploadImageToCloudinary = async (imageFile) => {
   try {
     console.log("🖼️ Starting image upload to Cloudinary...");
     console.log("📁 File size:", (imageFile.size / 1024).toFixed(2), "KB");
@@ -1062,7 +1080,7 @@ export const uploadImageToCloudinary = async (imageFile) => {
     });
     throw error;
   }
-};
+}; */
 
 // Add this function to check sheet access before making requests
 export const checkSheetAccess = async () => {
@@ -1257,5 +1275,523 @@ export const testSheetAccess = async () => {
       success: false,
       ...errorInfo,
     };
+  }
+};
+
+// Super optimized upload using modern browser APIs and techniques
+export const superFastUploadToCloudinary = async (imageFile) => {
+  try {
+    console.log("🚀 Starting SUPER FAST upload to Cloudinary...");
+    const totalStart = performance.now();
+
+    // Step 1: Ultra-fast compression using OffscreenCanvas (if supported)
+    const compressedFile = await ultraFastCompress(imageFile);
+
+    // Step 2: Upload with streaming and modern fetch features
+    const uploadPromise = fastUploadWithStreaming(compressedFile);
+
+    // Step 3: Timeout with shorter duration for speed
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error("Super fast upload timed out")), 8000);
+    });
+
+    const result = await Promise.race([uploadPromise, timeoutPromise]);
+
+    const totalEnd = performance.now();
+    console.log(
+      `🎯 TOTAL UPLOAD TIME: ${(totalEnd - totalStart).toFixed(2)}ms`
+    );
+
+    return result;
+  } catch (error) {
+    console.error("❌ Super fast upload failed:", error);
+    // Fallback to regular upload if super fast fails
+    console.log("🔄 Falling back to regular upload...");
+    return await uploadImageToCloudinary(imageFile);
+  }
+};
+
+// Ultra-fast compression using OffscreenCanvas or regular canvas
+const ultraFastCompress = async (file) => {
+  const start = performance.now();
+
+  try {
+    // Try OffscreenCanvas first (faster, doesn't block main thread)
+    if ("OffscreenCanvas" in window) {
+      const result = await compressWithOffscreenCanvas(file);
+      const end = performance.now();
+      console.log(
+        `⚡ OffscreenCanvas compression: ${(end - start).toFixed(2)}ms`
+      );
+      return result;
+    } else {
+      // Fallback to regular canvas
+      const result = await compressWithCanvas(file);
+      const end = performance.now();
+      console.log(`⚡ Canvas compression: ${(end - start).toFixed(2)}ms`);
+      return result;
+    }
+  } catch (error) {
+    console.log("⚠️ Compression failed, using original file");
+    return file;
+  }
+};
+
+// OffscreenCanvas compression (fastest)
+const compressWithOffscreenCanvas = async (file) => {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      try {
+        const canvas = new OffscreenCanvas(300, 300);
+        const ctx = canvas.getContext("2d");
+
+        // Draw image with optimal settings
+        ctx.drawImage(img, 0, 0, 300, 300);
+
+        // Convert to blob with high compression
+        canvas
+          .convertToBlob({
+            type: "image/jpeg",
+            quality: 0.6,
+          })
+          .then((blob) => {
+            const compressedFile = new File([blob], file.name, {
+              type: "image/jpeg",
+              lastModified: Date.now(),
+            });
+            resolve(compressedFile);
+          })
+          .catch(reject);
+      } catch (error) {
+        reject(error);
+      }
+    };
+    img.onerror = reject;
+    img.src = URL.createObjectURL(file);
+  });
+};
+
+// Regular canvas compression (fallback)
+const compressWithCanvas = async (file) => {
+  return new Promise((resolve) => {
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+    const img = new Image();
+
+    img.onload = () => {
+      canvas.width = 300;
+      canvas.height = 300;
+      ctx.drawImage(img, 0, 0, 300, 300);
+
+      canvas.toBlob(
+        (blob) => {
+          const compressedFile = new File([blob], file.name, {
+            type: "image/jpeg",
+            lastModified: Date.now(),
+          });
+          resolve(compressedFile);
+        },
+        "image/jpeg",
+        0.6
+      );
+    };
+    img.src = URL.createObjectURL(file);
+  });
+};
+
+// Fast upload with streaming and modern fetch
+const fastUploadWithStreaming = async (file) => {
+  const uploadStart = performance.now();
+
+  // Create FormData more efficiently
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("upload_preset", "brahim-profiles");
+  formData.append("cloud_name", "ds4qqawzr");
+
+  // Minimal parameters for fastest upload
+  formData.append("quality", "auto:low");
+  formData.append("format", "webp");
+  formData.append("width", "300");
+  formData.append("height", "300");
+  formData.append("crop", "fill");
+
+  console.log("📤 Uploading with streaming...");
+
+  const response = await fetch(
+    "https://api.cloudinary.com/v1_1/ds4qqawzr/image/upload",
+    {
+      method: "POST",
+      body: formData,
+      // Modern fetch options for speed
+      headers: {
+        Accept: "application/json",
+      },
+      // Enable streaming if supported
+      keepalive: true,
+      // Modern fetch options
+      mode: "cors",
+      credentials: "omit",
+    }
+  );
+
+  const uploadEnd = performance.now();
+  console.log(`⚡ Network request: ${(uploadEnd - uploadStart).toFixed(2)}ms`);
+
+  if (!response.ok) {
+    throw new Error(`Upload failed: ${response.status}`);
+  }
+
+  const data = await response.json();
+  console.log("✅ Super fast upload successful!");
+  console.log(`📊 Final size: ${(file.size / 1024).toFixed(2)} KB`);
+
+  return data.secure_url;
+};
+
+// Instant upload for very small images using data URLs
+export const instantUploadSmallImage = async (imageFile) => {
+  try {
+    // Only use for files smaller than 50KB
+    if (imageFile.size > 50 * 1024) {
+      return await superFastUploadToCloudinary(imageFile);
+    }
+
+    console.log("⚡ Starting INSTANT upload for small image...");
+    const start = performance.now();
+
+    // Convert to very small data URL
+    const dataUrl = await createTinyDataUrl(imageFile);
+
+    const response = await fetch(
+      "https://api.cloudinary.com/v1_1/ds4qqawzr/image/upload",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          file: dataUrl,
+          upload_preset: "brahim-profiles",
+          quality: "auto:low",
+          format: "webp",
+          width: 200,
+          height: 200,
+          crop: "fill",
+        }),
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(`Instant upload failed: ${response.status}`);
+    }
+
+    const data = await response.json();
+    const end = performance.now();
+    console.log(`⚡ INSTANT upload completed in ${(end - start).toFixed(2)}ms`);
+
+    return data.secure_url;
+  } catch (error) {
+    console.error("❌ Instant upload failed:", error);
+    return await superFastUploadToCloudinary(imageFile);
+  }
+};
+
+// Create tiny data URL for instant upload
+const createTinyDataUrl = async (file) => {
+  return new Promise((resolve) => {
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+    const img = new Image();
+
+    img.onload = () => {
+      canvas.width = 150;
+      canvas.height = 150;
+      ctx.drawImage(img, 0, 0, 150, 150);
+
+      const dataUrl = canvas.toDataURL("image/jpeg", 0.5);
+      resolve(dataUrl);
+    };
+    img.src = URL.createObjectURL(file);
+  });
+};
+
+// Usage recommendation function
+export const getOptimalUploadMethod = (imageFile) => {
+  const sizeInKB = imageFile.size / 1024;
+
+  if (sizeInKB < 50) {
+    console.log("📋 Recommended: instantUploadSmallImage");
+    return instantUploadSmallImage;
+  } else if (sizeInKB < 500) {
+    console.log("📋 Recommended: superFastUploadToCloudinary");
+    return superFastUploadToCloudinary;
+  } else {
+    console.log("📋 Recommended: uploadImageToCloudinary with compression");
+    return uploadImageToCloudinary;
+  }
+};
+
+export const uploadImageToCloudinary = async (imageFile) => {
+  try {
+    console.log("🖼️ Starting optimized image upload to Cloudinary...");
+    console.log(
+      "📁 Original file size:",
+      (imageFile.size / 1024).toFixed(2),
+      "KB"
+    );
+
+    // Step 1: Compress and resize image before upload
+    const compressedFile = await compressImage(imageFile);
+    console.log(
+      "📦 Compressed file size:",
+      (compressedFile.size / 1024).toFixed(2),
+      "KB"
+    );
+
+    // Step 2: Upload with optimizations
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(
+        () => reject(new Error("Image upload timed out after 15 seconds")),
+        15000
+      );
+    });
+
+    const uploadPromise = async () => {
+      const formData = new FormData();
+      formData.append("file", compressedFile);
+      formData.append("upload_preset", "brahim-profiles");
+      formData.append("cloud_name", "ds4qqawzr");
+
+      // Cloudinary optimization parameters for fastest upload
+      formData.append("quality", "auto:low"); // Lower quality for faster upload
+      formData.append("format", "webp"); // Use WebP format (smaller file size)
+      formData.append("width", "300"); // Limit width to 300px (profile images don't need to be huge)
+      formData.append("height", "300"); // Limit height to 300px
+      formData.append("crop", "fill"); // Crop to fit dimensions
+      formData.append("gravity", "face"); // Focus on face for profile images
+      formData.append("flags", "progressive"); // Progressive loading
+      formData.append("fetch_format", "auto"); // Auto format selection
+
+      const uploadStart = performance.now();
+      console.log("📤 Sending compressed image to Cloudinary...");
+
+      const response = await fetch(
+        "https://api.cloudinary.com/v1_1/ds4qqawzr/image/upload",
+        {
+          method: "POST",
+          body: formData,
+          // Add headers for better performance
+          headers: {
+            Accept: "application/json",
+          },
+        }
+      );
+
+      const uploadEnd = performance.now();
+      console.log(
+        `⚡ Upload completed in ${(uploadEnd - uploadStart).toFixed(2)}ms`
+      );
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("❌ Upload failed:", response.status, errorText);
+        throw new Error(`Upload failed: ${response.status} - ${errorText}`);
+      }
+
+      const data = await response.json();
+      console.log("✅ Image uploaded successfully!");
+      console.log("📊 Final stats:", {
+        originalSize: `${(imageFile.size / 1024).toFixed(2)} KB`,
+        compressedSize: `${(compressedFile.size / 1024).toFixed(2)} KB`,
+        finalSize: `${(data.bytes / 1024).toFixed(2)} KB`,
+        format: data.format,
+        dimensions: `${data.width}x${data.height}`,
+        compressionRatio: `${((1 - data.bytes / imageFile.size) * 100).toFixed(
+          1
+        )}%`,
+      });
+
+      return data.secure_url;
+    };
+
+    return await Promise.race([uploadPromise(), timeoutPromise]);
+  } catch (error) {
+    console.error("❌ Error uploading image:", error);
+    throw error;
+  }
+};
+
+// Helper function to compress image before upload
+const compressImage = async (
+  file,
+  maxWidth = 800,
+  maxHeight = 800,
+  quality = 0.8
+) => {
+  return new Promise((resolve) => {
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+    const img = new Image();
+
+    img.onload = () => {
+      // Calculate new dimensions while maintaining aspect ratio
+      let { width, height } = img;
+
+      if (width > height) {
+        if (width > maxWidth) {
+          height = (height * maxWidth) / width;
+          width = maxWidth;
+        }
+      } else {
+        if (height > maxHeight) {
+          width = (width * maxHeight) / height;
+          height = maxHeight;
+        }
+      }
+
+      canvas.width = width;
+      canvas.height = height;
+
+      // Draw and compress
+      ctx.drawImage(img, 0, 0, width, height);
+
+      canvas.toBlob(
+        (blob) => {
+          // Create a new File object from the blob
+          const compressedFile = new File([blob], file.name, {
+            type: "image/jpeg",
+            lastModified: Date.now(),
+          });
+          resolve(compressedFile);
+        },
+        "image/jpeg",
+        quality
+      );
+    };
+
+    img.src = URL.createObjectURL(file);
+  });
+};
+
+// Alternative ultra-fast version using base64 (for very small images)
+export const uploadImageToCloudinaryBase64 = async (imageFile) => {
+  try {
+    console.log("🖼️ Starting base64 upload to Cloudinary...");
+
+    // Convert to base64 and compress
+    const compressedBase64 = await convertToCompressedBase64(imageFile);
+
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error("Base64 upload timed out")), 10000);
+    });
+
+    const uploadPromise = async () => {
+      const uploadStart = performance.now();
+
+      const response = await fetch(
+        "https://api.cloudinary.com/v1_1/ds4qqawzr/image/upload",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            file: compressedBase64,
+            upload_preset: "brahim-profiles",
+            quality: "auto:low",
+            format: "webp",
+            width: 300,
+            height: 300,
+            crop: "fill",
+            gravity: "face",
+          }),
+        }
+      );
+
+      const uploadEnd = performance.now();
+      console.log(
+        `⚡ Base64 upload completed in ${(uploadEnd - uploadStart).toFixed(
+          2
+        )}ms`
+      );
+
+      if (!response.ok) {
+        throw new Error(`Upload failed: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log("✅ Base64 image uploaded successfully!");
+      return data.secure_url;
+    };
+
+    return await Promise.race([uploadPromise(), timeoutPromise]);
+  } catch (error) {
+    console.error("❌ Error uploading base64 image:", error);
+    throw error;
+  }
+};
+
+// Helper function to convert image to compressed base64
+const convertToCompressedBase64 = async (file) => {
+  return new Promise((resolve) => {
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+    const img = new Image();
+
+    img.onload = () => {
+      // Set smaller dimensions for faster upload
+      const maxSize = 400;
+      let { width, height } = img;
+
+      if (width > height) {
+        if (width > maxSize) {
+          height = (height * maxSize) / width;
+          width = maxSize;
+        }
+      } else {
+        if (height > maxSize) {
+          width = (width * maxSize) / height;
+          height = maxSize;
+        }
+      }
+
+      canvas.width = width;
+      canvas.height = height;
+      ctx.drawImage(img, 0, 0, width, height);
+
+      // Convert to base64 with high compression
+      const base64 = canvas.toDataURL("image/jpeg", 0.7);
+      resolve(base64);
+    };
+
+    img.src = URL.createObjectURL(file);
+  });
+};
+
+// Batch upload function for multiple images (if needed)
+export const uploadMultipleImages = async (imageFiles) => {
+  try {
+    console.log(`🖼️ Starting batch upload of ${imageFiles.length} images...`);
+
+    // Upload images in parallel with concurrency limit
+    const concurrencyLimit = 3; // Upload max 3 images at once
+    const results = [];
+
+    for (let i = 0; i < imageFiles.length; i += concurrencyLimit) {
+      const batch = imageFiles.slice(i, i + concurrencyLimit);
+      const batchPromises = batch.map((file) => uploadImageToCloudinary(file));
+      const batchResults = await Promise.all(batchPromises);
+      results.push(...batchResults);
+
+      console.log(`✅ Batch ${Math.floor(i / concurrencyLimit) + 1} completed`);
+    }
+
+    console.log(`🎉 All ${imageFiles.length} images uploaded successfully!`);
+    return results;
+  } catch (error) {
+    console.error("❌ Error in batch upload:", error);
+    throw error;
   }
 };
