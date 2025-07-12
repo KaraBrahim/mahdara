@@ -745,8 +745,8 @@ const StudentManagement = ({ setNavBarShown }) => {
                       <td className="px-6 py-3 block sm:table-cell w-full sm:w-auto">
                         <div className="flex items-center gap-3 justify-between sm:justify-start">
                           <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-full bg-gradient-to-r from-[#1b9174] to-green-600 flex items-center justify-center">
-                              <User className="text-white" size={14} />
+                            <div className="w-8 h-8 rounded-full flex items-center justify-center">
+                              {student.profileImage ? <img src={student.profileImage} alt={student.name}/> :<User className="text-white" size={14} />}
                             </div>
                             <div>
                               <p className="font-semibold text-gray-800 text-sm">
