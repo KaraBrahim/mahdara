@@ -417,7 +417,6 @@ export const addStudent = async (studentData) => {
       memerDate: studentData.graduationDate || "/",
       memTeacher: studentData.memTeacher || "/",
       memerYear: studentData.memerYear || "/",
-      memerNumber: studentData.memerNumber || "/",
       tartilMemYear: studentData.tartilMemYear || "/",
       memCenter: studentData.memCenter || "بن ساشو",
       Speciality: studentData.Speciality || "/",

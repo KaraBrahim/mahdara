@@ -10,6 +10,7 @@ import {
   Briefcase,
   GraduationCap,
   Loader2,
+  Check,
 } from "lucide-react";
 import { updateStudent, uploadImageToCloudinary } from "../googleSheetApi";
 
@@ -51,7 +52,6 @@ const ProfileForm = ({
     memTeacher: "",
     branchCenter: [],
     memerYear: "",
-    memerNumber: "",
     tartilMemYear: "",
     memCenter: "",
     Speciality: "",
@@ -61,6 +61,7 @@ const ProfileForm = ({
 
   const [imagePreview, setImagePreview] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
   const [errors, setErrors] = useState({});
 
   useEffect(() => {
@@ -96,7 +97,6 @@ const ProfileForm = ({
           ? student.branchCenter.split(", ")
           : [],
         memerYear: student.memerYear || "",
-        memerNumber: student.memerNumber || "",
         tartilMemYear: student.tartilMemYear || "",
         memCenter: student.memCenter || "",
         Speciality: student.Speciality || "",
@@ -172,7 +172,7 @@ const ProfileForm = ({
     const newErrors = {};
 
     if (!formData.fullName?.trim()) newErrors.fullName = "الاسم الكامل مطلوب";
- /*    if (!formData.birthDate) newErrors.birthDate = "تاريخ الميلاد مطلوب";
+    /*    if (!formData.birthDate) newErrors.birthDate = "تاريخ الميلاد مطلوب";
     if (!formData.phone?.trim()) newErrors.phone = "رقم الهاتف مطلوب";
     if (!formData.email?.trim()) {
       newErrors.email = "البريد الإلكتروني مطلوب";
@@ -200,6 +200,7 @@ const ProfileForm = ({
     if (!validateForm()) return;
 
     setIsSubmitting(true);
+    setIsSuccess(false);
 
     try {
       let updatedFormData = { ...formData };
@@ -213,13 +214,20 @@ const ProfileForm = ({
       // Update student in Google Sheets
       const updatedStudent = await updateStudent(updatedFormData);
 
-      // Call parent onSave with updated data
-      onSave(updatedStudent);
+      // Show success animation
+      setIsSuccess(true);
+
+      // Wait for animation to complete before calling onSave and closing
+      setTimeout(() => {
+        onSave(updatedStudent);
+        // Close the form after successful save
+        onCancel();
+      }, 1500); // 1.5 seconds for success animation
     } catch (error) {
       console.error("Error updating student:", error);
       alert("حدث خطأ أثناء تحديث البيانات. يرجى المحاولة مرة أخرى.");
-    } finally {
       setIsSubmitting(false);
+      setIsSuccess(false);
     }
   };
 
@@ -326,7 +334,6 @@ const ProfileForm = ({
                     value={formData.fullName || ""}
                     onChange={handleInputChange}
                     className={inputClasses(errors.fullName)}
-                    
                   />
                   {errors.fullName && (
                     <p className="text-red-500 text-sm mt-1">
@@ -342,8 +349,7 @@ const ProfileForm = ({
                     name="birthDate"
                     value={formData.birthDate || ""}
                     onChange={handleInputChange}
-                    /* className={inputClasses(errors.birthDate)} */
-                    
+                    className={inputClasses(errors.birthDate)}
                   />
                   {errors.birthDate && (
                     <p className="text-red-500 text-sm mt-1">
@@ -360,7 +366,6 @@ const ProfileForm = ({
                     value={formData.email || ""}
                     onChange={handleInputChange}
                     className={inputClasses(errors.email)}
-                    
                   />
                   {errors.email && (
                     <p className="text-red-500 text-sm mt-1">{errors.email}</p>
@@ -375,7 +380,6 @@ const ProfileForm = ({
                     value={formData.city || ""}
                     onChange={handleInputChange}
                     className={inputClasses(errors.city)}
-                    
                   />
                   {errors.city && (
                     <p className="text-red-500 text-sm mt-1">{errors.city}</p>
@@ -390,7 +394,6 @@ const ProfileForm = ({
                     value={formData.phone || ""}
                     onChange={handleInputChange}
                     className={inputClasses(errors.phone)}
-                    
                   />
                   {errors.phone && (
                     <p className="text-red-500 text-sm mt-1">{errors.phone}</p>
@@ -416,7 +419,6 @@ const ProfileForm = ({
                     value={formData.address || ""}
                     onChange={handleInputChange}
                     className={inputClasses(errors.address)}
-                    
                   />
                   {errors.address && (
                     <p className="text-red-500 text-sm mt-1">
@@ -456,7 +458,6 @@ const ProfileForm = ({
                     value={formData.jobType || ""}
                     onChange={handleInputChange}
                     className={inputClasses(errors.jobType)}
-                    
                   >
                     <option value="">اختر نوع العمل</option>
                     {jobTypes?.map((type) => (
@@ -550,7 +551,6 @@ const ProfileForm = ({
                     value={formData.lastEducation || ""}
                     onChange={handleInputChange}
                     className={inputClasses(errors.lastEducation)}
-                    
                   >
                     <option value="">اختر المستوى</option>
                     {educationLevels?.map((level) => (
@@ -663,7 +663,6 @@ const ProfileForm = ({
                     value={formData.graduationDate || ""}
                     onChange={handleInputChange}
                     className={inputClasses(errors.graduationDate)}
-                    
                   />
                   {errors.graduationDate && (
                     <p className="text-red-500 text-sm mt-1">
@@ -680,7 +679,6 @@ const ProfileForm = ({
                     value={formData.memTeacher || ""}
                     onChange={handleInputChange}
                     className={inputClasses(errors.memTeacher)}
-                    
                   />
                   {errors.memTeacher && (
                     <p className="text-red-500 text-sm mt-1">
@@ -730,17 +728,6 @@ const ProfileForm = ({
                 </div>
 
                 <div>
-                  <label className={labelClasses}>المستظهر رقم</label>
-                  <input
-                    type="text"
-                    name="memerNumber"
-                    value={formData.memerNumber || ""}
-                    onChange={handleInputChange}
-                    className={inputClasses()}
-                  />
-                </div>
-
-                <div>
                   <label className={labelClasses}>الاستظهار الترتيلي</label>
                   <input
                     type="text"
@@ -758,7 +745,6 @@ const ProfileForm = ({
                     value={formData.memCenter || ""}
                     onChange={handleInputChange}
                     className={inputClasses(errors.memCenter)}
-                    
                   >
                     <option value="">اختر المركز</option>
                     {memoryCenters?.map((center) => (
@@ -782,22 +768,37 @@ const ProfileForm = ({
             <button
               type="button"
               onClick={onCancel}
-              className="px-6 py-3 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors font-medium"
+              disabled={isSubmitting}
+              className="px-6 py-3 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
             >
               إلغاء
             </button>
             <button
               type="submit"
-              disabled={isSubmitting}
-              className="bg-gradient-to-r from-[#1b9174] to-green-600 hover:from-green-700 hover:to-green-800 text-white px-6 py-3 rounded-xl transition-all duration-300 font-medium shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 disabled:opacity-70 disabled:cursor-not-allowed flex items-center gap-2"
+              disabled={isSubmitting || isSuccess}
+              className={`px-6 py-3 rounded-xl transition-all duration-500 font-medium shadow-lg flex items-center gap-2 min-w-[140px] justify-center ${
+                isSuccess
+                  ? "bg-green-500 text-white transform scale-105 shadow-xl"
+                  : isSubmitting
+                  ? "bg-gray-400 text-white cursor-not-allowed"
+                  : "bg-gradient-to-r from-[#1b9174] to-green-600 hover:from-green-700 hover:to-green-800 text-white hover:shadow-xl transform hover:-translate-y-0.5"
+              }`}
             >
-              {isSubmitting ? (
+              {isSuccess ? (
+                <>
+                  <Check className="animate-bounce" size={18} />
+                  تم الحفظ بنجاح!
+                </>
+              ) : isSubmitting ? (
                 <>
                   <Loader2 className="animate-spin" size={18} />
                   جاري الحفظ...
                 </>
               ) : (
-                "حفظ التغييرات"
+                <>
+                  <Save size={18} />
+                  حفظ التغييرات
+                </>
               )}
             </button>
           </div>
