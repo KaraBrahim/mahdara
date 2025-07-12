@@ -1,5 +1,14 @@
 import React, { useState } from "react";
-import { User, Menu, X, Search, Bell, Settings, LogIn, ChevronRight } from "lucide-react";
+import {
+  User,
+  Menu,
+  X,
+  Search,
+  Bell,
+  Settings,
+  LogIn,
+  ChevronRight,
+} from "lucide-react";
 import logo from "./images/logo.png";
 import { useAuth } from "./AuthContext";
 import { isSignedIn } from "./googleSheetApi";
@@ -118,8 +127,8 @@ const MahdaraNavbar = ({ setCurrentPage, currentPageFace }) => {
               </div>
             ) : (
               <button
-                  onClick={() => signIn()}
-                  className="group bg-white text-[#1b9174] font-bold 
+                onClick={() => signIn()}
+                className="group bg-white text-[#1b9174] font-bold 
                    py-1 px-2 sm:py-2 sm:px-4 
                    rounded-2xl hover:shadow-2xl 
                    transition-all duration-300 transform hover:scale-105 
@@ -127,17 +136,17 @@ const MahdaraNavbar = ({ setCurrentPage, currentPageFace }) => {
                    text-base sm:text-sm
                    w-full max-w-xs sm:max-w-sm
                    touch-manipulation border-1 border-[#1b9174]"
-                >
-                  <LogIn
-                    size={20}
-                    className="group-hover:rotate-12 transition-transform duration-300 sm:w-6 sm:h-6"
-                  />
-                  <span className="flex-1 text-center">تسجيل الدخول</span>
-                  <ChevronRight
-                    size={16}
-                    className="group-hover:translate-x-1 transition-transform duration-300 sm:w-5 sm:h-5"
-                  />
-                </button>
+              >
+                <LogIn
+                  size={20}
+                  className="group-hover:rotate-12 transition-transform duration-300 sm:w-6 sm:h-6"
+                />
+                <span className="flex-1 text-center">تسجيل الدخول</span>
+                <ChevronRight
+                  size={16}
+                  className="group-hover:translate-x-1 transition-transform duration-300 sm:w-5 sm:h-5"
+                />
+              </button>
             )}
 
             {/* Mobile Menu Button */}
@@ -326,36 +335,61 @@ const MahdaraNavbar = ({ setCurrentPage, currentPageFace }) => {
             <div className="h-px bg-gradient-to-r from-transparent via-gray-200 to-transparent mb-6"></div>
 
             {/* User Profile Section */}
+
             <div className="bg-gradient-to-r from-gray-50 to-white rounded-2xl p-4 mb-4 border border-gray-100">
-              <div className="flex items-center gap-3 mb-3">
-                <div className="relative">
-                  <div className="w-12 h-12 bg-gradient-to-br from-[#1b9174] to-green-600 rounded-xl flex items-center justify-center shadow-lg">
-                    <div className="w-8 h-8 bg-gradient-to-r from-[#1b9174] to-green-600 rounded-full flex items-center justify-center  overflow-hidden">
-                  <img
-                    src={user.getImageUrl()}
-                    alt={user.getName()}
-                    className="w-8 h-8 rounded-full object-cover border-2 border-gray-200"
-                    onError={(e) => {
-                      // Fallback to a default avatar if image fails to load
-                      e.target.src =
-                        "https://via.placeholder.com/32x32/1b9174/white?text=" +
-                        user.getName().charAt(0);
-                    }}
-                  />
-                </div>
+              {user && isSignedIn() ? (
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="relative">
+                    <div className="w-12 h-12 bg-gradient-to-br from-[#1b9174] to-green-600 rounded-xl flex items-center justify-center shadow-lg">
+                      <div className="w-8 h-8 bg-gradient-to-r from-[#1b9174] to-green-600 rounded-full flex items-center justify-center  overflow-hidden">
+                        <img
+                          src={user.getImageUrl()}
+                          alt={user.getName()}
+                          className="w-8 h-8 rounded-full object-cover border-2 border-gray-200"
+                          onError={(e) => {
+                            // Fallback to a default avatar if image fails to load
+                            e.target.src =
+                              "https://via.placeholder.com/32x32/1b9174/white?text=" +
+                              user.getName().charAt(0);
+                          }}
+                        />
+                      </div>
+                    </div>
+                    <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white"></div>
                   </div>
-                  <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white"></div>
+                  <div className="flex-1">
+                    <p className="font-semibold text-gray-800 text-sm">
+                      {user.getName()}
+                    </p>
+                    <p className="text-xs text-gray-500 flex items-center gap-1">
+                      <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+                      مدير النظام - متصل
+                    </p>
+                  </div>
                 </div>
-                <div className="flex-1">
-                  <p className="font-semibold text-gray-800 text-sm">
-                  {user.getName()}
-                  </p>
-                  <p className="text-xs text-gray-500 flex items-center gap-1">
-                    <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-                    مدير النظام - متصل
-                  </p>
-                </div>
-              </div>
+              ) : (
+                <button
+                  onClick={() => signIn()}
+                  className="group bg-white text-[#1b9174] font-bold 
+                   py-1 px-2 sm:py-2 sm:px-4 
+                   rounded-2xl hover:shadow-2xl 
+                   transition-all duration-300 transform hover:scale-105 
+                   flex items-center justify-center gap-1 
+                   text-base sm:text-sm
+                   w-full max-w-xs sm:max-w-sm
+                   touch-manipulation border-1 border-[#1b9174]"
+                >
+                  <LogIn
+                    size={20}
+                    className="group-hover:rotate-12 transition-transform duration-300 sm:w-6 sm:h-6"
+                  />
+                  <span className="flex-1 text-center">تسجيل الدخول</span>
+                  <ChevronRight
+                    size={16}
+                    className="group-hover:translate-x-1 transition-transform duration-300 sm:w-5 sm:h-5"
+                  />
+                </button>
+              )}
             </div>
 
             {/* Quick Actions */}

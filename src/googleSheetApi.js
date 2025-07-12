@@ -147,9 +147,30 @@ export const signIn = async (checkOnly = false) => {
     );
   }
 
+  // Clear any potentially corrupted tokens first
   const savedToken = sessionStorage.getItem("access_token");
   if (savedToken) {
-    window.gapi.client.setToken({ access_token: savedToken });
+    try {
+      // Validate the saved token before using it
+      const testResponse = await fetch(
+        "https://www.googleapis.com/oauth2/v1/userinfo?alt=json",
+        {
+          headers: { Authorization: `Bearer ${savedToken}` },
+        }
+      );
+
+      if (testResponse.ok) {
+        window.gapi.client.setToken({ access_token: savedToken });
+      } else {
+        // Token is invalid, remove it
+        sessionStorage.removeItem("access_token");
+        window.gapi.client.setToken(null);
+      }
+    } catch (error) {
+      // Token validation failed, remove it
+      sessionStorage.removeItem("access_token");
+      window.gapi.client.setToken(null);
+    }
   }
 
   const existingToken = window.gapi.client.getToken();
@@ -168,7 +189,7 @@ export const signIn = async (checkOnly = false) => {
       }
 
       const userInfo = await response.json();
-      console.log(userInfo);
+      console.log("User info:", userInfo);
 
       return {
         getEmail: () => userInfo.email,
@@ -186,7 +207,14 @@ export const signIn = async (checkOnly = false) => {
   return new Promise((resolve, reject) => {
     const originalCallback = tokenClient.callback;
 
+    // Set a timeout to handle cases where the popup doesn't respond
+    const timeoutId = setTimeout(() => {
+      tokenClient.callback = originalCallback;
+      reject(new Error("Authentication timeout - please try again"));
+    }, 60000); // 60 second timeout
+
     tokenClient.callback = async (tokenResponse) => {
+      clearTimeout(timeoutId);
       tokenClient.callback = originalCallback;
 
       if (tokenResponse.error) {
@@ -196,11 +224,17 @@ export const signIn = async (checkOnly = false) => {
       }
 
       try {
+        // Clear any existing tokens first
+        sessionStorage.removeItem("access_token");
+        window.gapi.client.setToken(null);
+
+        // Set the new token
         sessionStorage.setItem("access_token", tokenResponse.access_token);
         window.gapi.client.setToken({
           access_token: tokenResponse.access_token,
         });
 
+        // Fetch user info with the new token
         const response = await fetch(
           "https://www.googleapis.com/oauth2/v1/userinfo?alt=json",
           {
@@ -213,7 +247,8 @@ export const signIn = async (checkOnly = false) => {
         }
 
         const userInfo = await response.json();
-        console.log(userInfo);
+        console.log("New user info:", userInfo);
+
         resolve({
           getEmail: () => userInfo.email,
           getName: () => userInfo.name,
@@ -221,23 +256,64 @@ export const signIn = async (checkOnly = false) => {
         });
       } catch (error) {
         console.error("Error fetching user profile:", error);
+        // Clean up on error
+        sessionStorage.removeItem("access_token");
+        window.gapi.client.setToken(null);
         reject(error);
       }
     };
 
     try {
-      if (existingToken) {
-        tokenClient.requestAccessToken({ prompt: "" });
+      // For mobile devices, always use select_account prompt to ensure fresh auth
+      const isMobile =
+        /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+          navigator.userAgent
+        );
+
+      if (isMobile || !existingToken) {
+        // Force account selection on mobile or when no token exists
+        tokenClient.requestAccessToken({
+          prompt: "select_account",
+          hint: "", // Clear any hints
+        });
       } else {
-        tokenClient.requestAccessToken({ prompt: "select_account" });
+        // Desktop with existing token - try silent auth first
+        tokenClient.requestAccessToken({ prompt: "" });
       }
     } catch (error) {
+      clearTimeout(timeoutId);
       tokenClient.callback = originalCallback;
       reject(error);
     }
   });
 };
 
+// Helper function to completely sign out
+/* export const signOut = () => {
+  try {
+    sessionStorage.removeItem("access_token");
+    window.gapi.client.setToken(null);
+    
+    // Revoke the token if it exists
+    const token = window.gapi.client.getToken();
+    if (token) {
+      window.google.accounts.oauth2.revoke(token.access_token);
+    }
+  } catch (error) {
+    console.error("Error during sign out:", error);
+  }
+};
+
+// Helper function to check if user is currently signed in
+export const isSignedIn = async () => {
+  try {
+    const result = await signIn(true);
+    return !!result;
+  } catch (error) {
+    return false;
+  }
+};
+ */
 const initializeTokenClient = () => {
   if (!window.google || !window.google.accounts) {
     throw new Error("Google Identity Services not loaded");
