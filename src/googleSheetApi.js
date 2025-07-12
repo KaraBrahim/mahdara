@@ -1327,17 +1327,37 @@ export const uploadImageToCloudinary = async (imageFile) => {
       canvas.toBlob((blob) => resolve(blob), `image/${TARGET_FORMAT}`, QUALITY);
     });
 
-    // Create FormData with optimized parameters
+    // Create FormData with ONLY allowed parameters for unsigned upload
     const formData = new FormData();
     formData.append("file", blob, imageFile.name);
     formData.append("upload_preset", "brahim-profiles");
-    formData.append("cloud_name", "ds4qqawzr");
-    formData.append("quality", "auto:good");
-    formData.append("format", TARGET_FORMAT);
-    formData.append("width", width);
-    formData.append("height", height);
-    formData.append("crop", "fill");
-    formData.append("gravity", "face");
+    // Remove these parameters - they're not allowed in unsigned uploads:
+    // formData.append("format", TARGET_FORMAT);
+    // formData.append("width", width);
+    // formData.append("height", height);
+    // formData.append("crop", "fill");
+    // formData.append("gravity", "face");
+    // formData.append("quality", "auto:good");
+
+    // You can only use these parameters with unsigned uploads:
+    // - upload_preset (required)
+    // - callback
+    // - public_id
+    // - folder
+    // - asset_folder
+    // - tags
+    // - context
+    // - metadata
+    // - face_coordinates
+    // - custom_coordinates
+    // - source
+    // - filename_override
+    // - manifest_transformation
+    // - manifest_json
+    // - template
+    // - template_vars
+    // - regions
+    // - public_id_prefix
 
     // Upload with timeout
     const controller = new AbortController();
