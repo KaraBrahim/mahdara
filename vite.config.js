@@ -5,5 +5,5 @@ import tailwindcss from '@tailwindcss/vite'
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [tailwindcss(),react()],
-  base: '/mahdara/', // Add this line
+  base: '/mahdara/', // Your repo name
 })
