@@ -62,95 +62,132 @@ export const isTokenValid = async () => {
 
 export const updateStudent = async (studentData) => {
   try {
-    // Check if Google API is initialized
-    if (!window.gapi || !window.gapi.client) {
-      throw new Error("Google API not initialized");
-    }
-
-    // Check if user is signed in
-    if (!isSignedIn()) {
-      throw new Error("User not signed in");
-    }
-
-    console.log("🔄 Updating student in Google Sheets...");
-
-    // First, find the row where this student exists
-    const response = await window.gapi.client.sheets.spreadsheets.values.get({
-      spreadsheetId: SPREADSHEET_ID,
-      range: `${SHEETS.MahdaraMemorizedStudent}!A:A`,
+    // Add timeout to the entire operation
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error("Update operation timed out")), 30000); // 30 seconds timeout
     });
 
-    const rows = response.result.values || [];
-    let rowNumber = -1;
-
-    // Find the row with matching ID
-    for (let i = 0; i < rows.length; i++) {
-      if (rows[i][0] === studentData.id) {
-        rowNumber = i + 1; // +1 because Sheets API is 1-indexed
-        break;
+    const updatePromise = async () => {
+      // Check if Google API is initialized
+      if (!window.gapi || !window.gapi.client) {
+        throw new Error("Google API not initialized");
       }
-    }
 
-    if (rowNumber === -1) {
-      throw new Error("Student not found in sheet");
-    }
+      // Check if user is signed in (uncomment if you have this function)
+      /* if (!isSignedIn()) {
+        throw new Error("User not signed in");
+      } */
 
-    console.log(`📊 Found student at row ${rowNumber}`);
+      console.log("🔄 Updating student in Google Sheets...");
+      console.log("📊 Student ID:", studentData.id);
 
-    // Handle image upload if there's a new image file
-    let profileImageUrl = null;
-    if (
-      studentData.profileImage &&
-      typeof studentData.profileImage !== "string" &&
-      studentData.profileImage !==
-        "https://res.cloudinary.com/ds4qqawzr/image/upload/v1749917257/pfp_tncrll.jpg"
-    ) {
-      console.log("🖼️ Uploading new profile image to Cloudinary...");
-      profileImageUrl = await uploadImageToCloudinary(studentData.profileImage);
-      console.log("✅ Image uploaded to Cloudinary:", profileImageUrl);
-    }
+      // Handle image upload first if there's a new image file
+      let profileImageUrl = null;
+      if (
+        studentData.profileImage &&
+        typeof studentData.profileImage !== "string" &&
+        studentData.profileImage !==
+          "https://res.cloudinary.com/ds4qqawzr/image/upload/v1749917257/pfp_tncrll.jpg"
+      ) {
+        console.log("🖼️ Uploading new profile image to Cloudinary...");
+        const uploadStart = performance.now();
+        
+        profileImageUrl = await uploadImageToCloudinary(studentData.profileImage);
+        
+        const uploadEnd = performance.now();
+        console.log(`✅ Image uploaded to Cloudinary in ${(uploadEnd - uploadStart).toFixed(2)}ms:`, profileImageUrl);
+      }
 
-    // Prepare the update data
-    const updateData = [
-      studentData.id, // A: ID
-      studentData.fullName, // B: Full Name
-      studentData.branchCenter?.join(", ") || "", // C: Branch Center
-      studentData.birthDate, // D: Birth Date
-      studentData.memerYear, // E: Memorization Year
-      studentData.graduationDate, // F: Graduation Date
-      studentData.memTeacher, // G: Memory Teacher
-      studentData.tartilMemYear, // H: Tartil Memory Year
-      studentData.phone, // I: Phone
-      studentData.phone2, // J: Phone 2
-      studentData.facebook, // K: Facebook
-      studentData.email, // L: Email
-      studentData.city, // M: City
-      null, // N: Reserved
-      null, // O: Reserved
-      null, // P: Reserved
-      null, // Q: Reserved
-      studentData.lastEducation, // R: Last Education Level
-      studentData.Speciality, // S: Speciality
-      studentData.workerNature, // T: Job Nature
-      studentData.activity?.join(", ") || "", // U: Job Activity
-      studentData.jobType === "طالب"
-        ? studentData.studentUniversity
-        : studentData.workerLocation || "", // V: Job Address
-      studentData.address, // W: Address
-      studentData.fieldActivity?.join(", ") || "", // X: Social Activity
-      studentData.activity?.join(", ") || "", // Y: Mahdara Activity
-      studentData.memCenter, // Z: Memory Center
-      null, // AA: Reserved
-      null, // AB: Memory Number
-      profileImageUrl || null, // AC: Profile Image
-      null, // AD: Profile URL
-      null, // AE: Attendance 2025
-      studentData.jobType === "طالب" ? studentData.studentUniversity : null, // AF: Student University
-    ];
+      // More efficient approach: Use a smaller range or implement row tracking
+      console.log("🔍 Searching for student row...");
+      const searchStart = performance.now();
+      
+      // Try to get a reasonable range first (e.g., first 1000 rows)
+      const response = await window.gapi.client.sheets.spreadsheets.values.get({
+        spreadsheetId: SPREADSHEET_ID,
+        range: `${SHEETS.MahdaraMemorizedStudent}!A1:A1000`, // Limit the range
+      });
 
-    // Update the student in the spreadsheet
-    const updateResponse =
-      await window.gapi.client.sheets.spreadsheets.values.update({
+      const rows = response.result.values || [];
+      let rowNumber = -1;
+
+      // Find the row with matching ID
+      for (let i = 0; i < rows.length; i++) {
+        if (rows[i] && rows[i][0] === studentData.id) {
+          rowNumber = i + 1; // +1 because Sheets API is 1-indexed
+          break;
+        }
+      }
+
+      const searchEnd = performance.now();
+      console.log(`🔍 Search completed in ${(searchEnd - searchStart).toFixed(2)}ms`);
+
+      if (rowNumber === -1) {
+        // If not found in first 1000 rows, try a broader search
+        console.log("🔍 Student not found in first 1000 rows, searching entire sheet...");
+        const fullResponse = await window.gapi.client.sheets.spreadsheets.values.get({
+          spreadsheetId: SPREADSHEET_ID,
+          range: `${SHEETS.MahdaraMemorizedStudent}!A:A`,
+        });
+
+        const allRows = fullResponse.result.values || [];
+        for (let i = 0; i < allRows.length; i++) {
+          if (allRows[i] && allRows[i][0] === studentData.id) {
+            rowNumber = i + 1;
+            break;
+          }
+        }
+      }
+
+      if (rowNumber === -1) {
+        throw new Error(`Student with ID ${studentData.id} not found in sheet`);
+      }
+
+      console.log(`📊 Found student at row ${rowNumber}`);
+
+      // Prepare the update data
+      const updateData = [
+        studentData.id, // A: ID
+        studentData.fullName, // B: Full Name
+        studentData.branchCenter?.join(", ") || "", // C: Branch Center
+        studentData.birthDate, // D: Birth Date
+        studentData.memerYear, // E: Memorization Year
+        studentData.graduationDate, // F: Graduation Date
+        studentData.memTeacher, // G: Memory Teacher
+        studentData.tartilMemYear, // H: Tartil Memory Year
+        studentData.phone, // I: Phone
+        studentData.phone2, // J: Phone 2
+        studentData.facebook, // K: Facebook
+        studentData.email, // L: Email
+        studentData.city, // M: City
+        null, // N: Reserved
+        null, // O: Reserved
+        null, // P: Reserved
+        null, // Q: Reserved
+        studentData.lastEducation, // R: Last Education Level
+        studentData.Speciality, // S: Speciality
+        studentData.workerNature, // T: Job Nature
+        studentData.activity?.join(", ") || "", // U: Job Activity
+        studentData.jobType === "طالب"
+          ? studentData.studentUniversity
+          : studentData.workerLocation || "", // V: Job Address
+        studentData.address, // W: Address
+        studentData.fieldActivity?.join(", ") || "", // X: Social Activity
+        studentData.activity?.join(", ") || "", // Y: Mahdara Activity
+        studentData.memCenter, // Z: Memory Center
+        null, // AA: Reserved
+        null, // AB: Memory Number
+        profileImageUrl || studentData.profileImageUrl || null, // AC: Profile Image
+        null, // AD: Profile URL
+        null, // AE: Attendance 2025
+        studentData.jobType === "طالب" ? studentData.studentSpeciality : null, // AF: Student Speciality
+      ];
+
+      console.log("📝 Preparing to update row with data:", updateData.slice(0, 5), "...");
+
+      // Update the student in the spreadsheet
+      const updateStart = performance.now();
+      const updateResponse = await window.gapi.client.sheets.spreadsheets.values.update({
         spreadsheetId: SPREADSHEET_ID,
         range: `${SHEETS.MahdaraMemorizedStudent}!A${rowNumber}:AG${rowNumber}`,
         valueInputOption: "RAW",
@@ -159,17 +196,30 @@ export const updateStudent = async (studentData) => {
         },
       });
 
-    console.log("✅ Student updated successfully in Google Sheets");
-    console.log("Response:", updateResponse);
+      const updateEnd = performance.now();
+      console.log(`✅ Sheet update completed in ${(updateEnd - updateStart).toFixed(2)}ms`);
+      console.log("✅ Student updated successfully in Google Sheets");
+      console.log("Response:", updateResponse);
 
-    // Return the updated student object with the new image URL if it was updated
-    return {
-      ...studentData,
-      profileImageUrl: profileImageUrl || studentData.profileImageUrl,
-      profileImage: profileImageUrl || studentData.profileImageUrl,
+      // Return the updated student object with the new image URL if it was updated
+      return {
+        ...studentData,
+        profileImageUrl: profileImageUrl || studentData.profileImageUrl,
+        profileImage: profileImageUrl || studentData.profileImageUrl,
+      };
     };
+
+    // Race between the update operation and timeout
+    return await Promise.race([updatePromise(), timeoutPromise]);
+
   } catch (error) {
     console.error("❌ Error updating student in Google Sheets:", error);
+    console.error("Error details:", {
+      message: error.message,
+      stack: error.stack,
+      studentId: studentData.id,
+      timestamp: new Date().toISOString()
+    });
     throw error;
   }
 };
@@ -801,45 +851,6 @@ export const signOut = async () => {
   }
 };
 
-// Memory-efficient fetch students
-export const fetchStudents = async () => {
-  try {
-    if (!window.gapi || !window.gapi.client) {
-      throw new Error("Google API not initialized");
-    }
-
-    console.log("🔄 Fetching students from Google Sheets...");
-
-    const response = await window.gapi.client.sheets.spreadsheets.values.get({
-      spreadsheetId: SPREADSHEET_ID,
-      range: `${SHEETS.MahdaraMemorizedStudent}!A3:AG`,
-    });
-
-    const rows = response.result.values || [];
-
-    // Process in chunks for low memory devices
-    const chunkSize = isLowMemoryDevice() ? 50 : 100;
-    const students = [];
-
-    for (let i = 0; i < rows.length; i += chunkSize) {
-      const chunk = rows.slice(i, i + chunkSize);
-      const processedChunk = chunk.map(processStudentRow);
-      students.push(...processedChunk);
-
-      // Give browser time to breathe on low memory devices
-      if (isLowMemoryDevice() && i + chunkSize < rows.length) {
-        await new Promise((resolve) => setTimeout(resolve, 10));
-      }
-    }
-
-    console.log(`✅ Fetched ${students.length} students from Google Sheets`);
-    return students;
-  } catch (error) {
-    console.error("❌ Error fetching students:", error);
-    throw error;
-  }
-};
-
 // Process individual student row
 const processStudentRow = (row) => {
   return {
@@ -983,27 +994,268 @@ export const addStudent = async (studentData) => {
 
 export const uploadImageToCloudinary = async (imageFile) => {
   try {
-    const formData = new FormData();
-    formData.append("file", imageFile);
-    formData.append("upload_preset", "brahim-profiles");
-    formData.append("cloud_name", "ds4qqawzr");
+    console.log("🖼️ Starting image upload to Cloudinary...");
+    console.log("📁 File size:", (imageFile.size / 1024).toFixed(2), "KB");
+    console.log("📁 File type:", imageFile.type);
 
-    const response = await fetch(
-      "https://api.cloudinary.com/v1_1/ds4qqawzr/image/upload",
-      {
-        method: "POST",
-        body: formData,
+    // Add timeout for the upload
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error("Image upload timed out")), 20000); // 20 seconds timeout
+    });
+
+    const uploadPromise = async () => {
+      const formData = new FormData();
+      formData.append("file", imageFile);
+      formData.append("upload_preset", "brahim-profiles");
+      formData.append("cloud_name", "ds4qqawzr");
+      
+      // Add additional parameters for optimization
+      formData.append("quality", "auto:good"); // Optimize quality
+      formData.append("fetch_format", "auto"); // Use best format for browser
+      formData.append("flags", "progressive"); // Progressive JPEG for better loading
+
+      const uploadStart = performance.now();
+      console.log("📤 Sending request to Cloudinary...");
+
+      const response = await fetch(
+        "https://api.cloudinary.com/v1_1/ds4qqawzr/image/upload",
+        {
+          method: "POST",
+          body: formData,
+        }
+      );
+
+      const uploadEnd = performance.now();
+      console.log(`⏱️ Upload request completed in ${(uploadEnd - uploadStart).toFixed(2)}ms`);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("❌ Upload failed with status:", response.status, response.statusText);
+        console.error("❌ Error response:", errorText);
+        throw new Error(`Upload failed: ${response.status} ${response.statusText} - ${errorText}`);
       }
-    );
 
-    if (!response.ok) {
-      throw new Error("Upload failed");
+      const data = await response.json();
+      console.log("✅ Image uploaded successfully:", data.secure_url);
+      console.log("📊 Upload stats:", {
+        originalSize: `${(imageFile.size / 1024).toFixed(2)} KB`,
+        uploadedSize: `${(data.bytes / 1024).toFixed(2)} KB`,
+        format: data.format,
+        width: data.width,
+        height: data.height
+      });
+
+      return data.secure_url;
+    };
+
+    // Race between upload and timeout
+    return await Promise.race([uploadPromise(), timeoutPromise]);
+
+  } catch (error) {
+    console.error("❌ Error uploading image:", error);
+    console.error("Error details:", {
+      message: error.message,
+      fileName: imageFile?.name,
+      fileSize: imageFile?.size,
+      fileType: imageFile?.type,
+      timestamp: new Date().toISOString()
+    });
+    throw error;
+  }
+};
+
+// Add this function to check sheet access before making requests
+export const checkSheetAccess = async () => {
+  try {
+    if (!window.gapi || !window.gapi.client) {
+      throw new Error("Google API not initialized");
     }
 
-    const data = await response.json();
-    return data.secure_url;
+    console.log("🔍 Checking sheet access...");
+
+    // Try to get basic spreadsheet info (requires minimal permissions)
+    const response = await window.gapi.client.sheets.spreadsheets.get({
+      spreadsheetId: SPREADSHEET_ID,
+    });
+
+    console.log("✅ Sheet access confirmed");
+    return true;
   } catch (error) {
-    console.error("Error uploading image:", error);
+    console.error("❌ Sheet access denied:", error);
+
+    if (error.status === 403) {
+      const userEmail = userProfile?.email || "current account";
+      throw new Error(
+        `Access denied: The account "${userEmail}" doesn't have permission to access this spreadsheet. Please contact the administrator to grant access.`
+      );
+    }
+
     throw error;
+  }
+};
+
+// Enhanced fetchStudents with better error handling
+export const fetchStudents = async () => {
+  try {
+    // Check access first
+    await checkSheetAccess();
+
+    if (!window.gapi || !window.gapi.client) {
+      throw new Error("Google API not initialized");
+    }
+
+    console.log("🔄 Fetching students from Google Sheets...");
+
+    const response = await window.gapi.client.sheets.spreadsheets.values.get({
+      spreadsheetId: SPREADSHEET_ID,
+      range: `${SHEETS.MahdaraMemorizedStudent}!A3:AG`,
+    });
+
+    const rows = response.result.values || [];
+
+    // Process in chunks for low memory devices
+    const chunkSize = isLowMemoryDevice() ? 50 : 100;
+    const students = [];
+
+    for (let i = 0; i < rows.length; i += chunkSize) {
+      const chunk = rows.slice(i, i + chunkSize);
+      const processedChunk = chunk.map(processStudentRow);
+      students.push(...processedChunk);
+
+      // Give browser time to breathe on low memory devices
+      if (isLowMemoryDevice() && i + chunkSize < rows.length) {
+        await new Promise((resolve) => setTimeout(resolve, 10));
+      }
+    }
+
+    console.log(`✅ Fetched ${students.length} students from Google Sheets`);
+    return students;
+  } catch (error) {
+    console.error("❌ Error fetching students:", error);
+
+    if (error.status === 403) {
+      throw new Error(
+        "Access denied: This account doesn't have permission to view the spreadsheet. Please contact the administrator to grant access."
+      );
+    }
+
+    throw error;
+  }
+};
+
+// Function to get current user info for better error messages
+export const getCurrentUser = async () => {
+  try {
+    if (!isSignedIn()) {
+      return null;
+    }
+
+    const storedProfile = TokenStorage.get("user_profile");
+    if (storedProfile) {
+      return storedProfile;
+    }
+
+    const token = window.gapi.client.getToken();
+    if (token) {
+      const userInfo = await fetchUserProfile(token.access_token);
+      TokenStorage.set("user_profile", userInfo);
+      return userInfo;
+    }
+
+    return null;
+  } catch (error) {
+    console.error("Error getting current user:", error);
+    return null;
+  }
+};
+
+// Helper function to show user-friendly error messages
+export const handleApiError = (error, operation = "operation") => {
+  console.error(`Error during ${operation}:`, error);
+
+  if (error.status === 403) {
+    return {
+      type: "permission",
+      message: `❌ Access Denied: Your account doesn't have permission to perform this ${operation}. Please contact the administrator to grant access to your Google account.`,
+      details: error.message,
+    };
+  }
+
+  if (error.status === 401) {
+    return {
+      type: "authentication",
+      message: "❌ Authentication Error: Please sign in again.",
+      details: error.message,
+    };
+  }
+
+  if (error.status === 404) {
+    return {
+      type: "not_found",
+      message:
+        "❌ Spreadsheet Not Found: The requested spreadsheet doesn't exist or has been deleted.",
+      details: error.message,
+    };
+  }
+
+  if (error.status === 429) {
+    return {
+      type: "rate_limit",
+      message: "❌ Too Many Requests: Please wait a moment and try again.",
+      details: error.message,
+    };
+  }
+
+  return {
+    type: "unknown",
+    message: `❌ Error: Something went wrong during ${operation}. Please try again.`,
+    details: error.message,
+  };
+};
+
+// Test function to verify everything works
+export const testSheetAccess = async () => {
+  try {
+    console.log("🧪 Testing sheet access...");
+
+    // Test 1: Check if APIs are loaded
+    if (!window.gapi || !window.gapi.client) {
+      throw new Error("Google API not loaded");
+    }
+    console.log("✅ Google API loaded");
+
+    // Test 2: Check if user is signed in
+    if (!isSignedIn()) {
+      throw new Error("User not signed in");
+    }
+    console.log("✅ User is signed in");
+
+    // Test 3: Get current user info
+    const user = await getCurrentUser();
+    console.log("✅ Current user:", user?.email || "unknown");
+
+    // Test 4: Check sheet access
+    await checkSheetAccess();
+    console.log("✅ Sheet access confirmed");
+
+    // Test 5: Try to read some data
+    const response = await window.gapi.client.sheets.spreadsheets.values.get({
+      spreadsheetId: SPREADSHEET_ID,
+      range: `${SHEETS.MahdaraMemorizedStudent}!A1:A5`,
+    });
+    console.log("✅ Successfully read data from sheet");
+
+    return {
+      success: true,
+      message:
+        "All tests passed! Your account has proper access to the spreadsheet.",
+      user: user?.email,
+    };
+  } catch (error) {
+    const errorInfo = handleApiError(error, "access test");
+    return {
+      success: false,
+      ...errorInfo,
+    };
   }
 };
