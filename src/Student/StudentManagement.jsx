@@ -37,6 +37,7 @@ import StudentData from "./Students.json";
 import { useAuth } from "../AuthContext";
 import CountUp from "react-countup";
 import { useInView } from "react-intersection-observer";
+import LogInPage from "../LogInPage";
 
 const StudentManagement = ({ setNavBarShown }) => {
   const [Statistics, inView] = useInView({
@@ -432,6 +433,7 @@ const StudentManagement = ({ setNavBarShown }) => {
     setCurrentPage(page);
   };
 
+  const isLoggedIn = user && isSignedIn();
   return (
     <div
       className="font-tajwal min-h-screen bg-gradient-to-br from-[#F5FFFC] to-gray-50"
@@ -521,423 +523,449 @@ const StudentManagement = ({ setNavBarShown }) => {
         </>
       ) : (
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          {/* Page Header */}
-          <div className="mb-8">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-              <div>
-                <h1 className="text-3xl font-bold text-gray-800 mb-2">
-                  إدارة المستظهرين
-                </h1>
-                <p className="text-gray-600">
-                  إدارة وتتبع جميع المستظهرين في المحضرة
-                </p>
-              </div>
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={() => {
-                    setShowAddModal(true);
-                    setNavBarShown(false);
-                  }}
-                  className="bg-gradient-to-r from-[#1b9174] to-green-600 hover:from-green-700 hover:to-green-800 text-white px-6 py-3 rounded-2xl flex items-center gap-2 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1"
-                >
-                  <Plus size={20} />
-                  إضافة مستظهر جديد
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* Statistics Cards */}
-          <div
-            ref={Statistics}
-            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8"
-          >
-            <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
-              <div className="flex items-center gap-4">
-                <div className="p-3 rounded-xl bg-green-50 text-[#1b9174]">
-                  <Users size={24} />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold text-gray-800">
-                    {inView && (
-                      <CountUp
-                        start={0}
-                        end={students.length}
-                        duration={2}
-                        delay={0}
-                        separator=""
-                      />
-                    )}
-                  </p>
-                  <p className="text-gray-600 text-sm">إجمالي المستظهرين</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
-              <div className="flex items-center gap-4">
-                <div className="p-3 rounded-xl bg-blue-50 text-blue-600">
-                  <GraduationCap size={24} />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold text-gray-800">
-                    {inView && (
-                      <CountUp
-                        start={0}
-                        end={thisYearStudents}
-                        duration={2}
-                        delay={0}
-                      />
-                    )}
-                  </p>
-                  <p className="text-gray-600 text-sm">المستظهرون هذه السنة</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
-              <div className="flex items-center gap-4">
-                <div className="p-3 rounded-xl bg-green-50 text-green-600">
-                  <CheckCircle size={24} />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold text-gray-800">
-                    {inView && (
-                      <CountUp
-                        start={0}
-                        end={attendingThisYear}
-                        duration={2}
-                        delay={0}
-                      />
-                    )}
-                  </p>
-                  <p className="text-gray-600 text-sm">الحاضرون هذه السنة</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
-              <div className="flex items-center gap-4">
-                <div className="p-3 rounded-xl bg-[#b8ac8c] bg-opacity-20 text-[#b8ac8c]">
-                  <MapPin size={24} />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold text-gray-800">
-                    {inView && (
-                      <CountUp
-                        start={0}
-                        end={tartilMemNumber}
-                        duration={2}
-                        delay={0}
-                      />
-                    )}
-                  </p>
-                  <p className="text-gray-600 text-sm">المستظهرون ترتيليا</p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Filters and Search */}
-          <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 mb-8 hover:shadow-md transition-shadow">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              {/* Search */}
-              <div className="relative">
-                <div className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400">
-                  <Search size={20} />
-                </div>
-                <input
-                  type="text"
-                  placeholder="البحث بالاسم، الايميل، أو رقم الهاتف..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pr-10 pl-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#1b9174] focus:border-transparent transition-all"
-                />
-              </div>
-
-              {/* Branch Filter */}
-              <div className="relative">
-                <select
-                  value={filterBranch}
-                  onChange={(e) => setFilterBranch(e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#1b9174] focus:border-transparent transition-all appearance-none bg-white"
-                >
-                  <option value="">جميع الفروع</option>
-                  {branches.map((branch) => (
-                    <option key={branch} value={branch}>
-                      {branch}
-                    </option>
-                  ))}
-                </select>
-                <ChevronDown
-                  className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
-                  size={20}
-                />
-              </div>
-
-              {/* Year Filter */}
-              <div className="relative">
-                <select
-                  value={filterYear}
-                  onChange={(e) => setFilterYear(e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#1b9174] focus:border-transparent transition-all appearance-none bg-white"
-                >
-                  <option value="">مستظهر سنة</option>
-                  {years.map((year) => (
-                    <option key={year} value={year.toString()}>
-                      {year}
-                    </option>
-                  ))}
-                </select>
-                <ChevronDown
-                  className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
-                  size={20}
-                />
-              </div>
-
-              {/* Actions */}
-              <div className="flex gap-2">
-                <button className="flex-1 px-4 py-3 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors flex items-center justify-center gap-2">
-                  <Download size={20} />
-                  تصدير
-                </button>
-                <button className="flex-1 px-4 py-3 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors flex items-center justify-center gap-2">
-                  <Upload size={20} />
-                  استيراد
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* Students Table */}
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow">
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-gray-50 border-b border-gray-100 hidden sm:table-header-group">
-                  <tr>
-                    <th className="px-6 py-3 text-center text-sm font-semibold text-gray-600">
-                      المستظهر
-                    </th>
-                    <th className="px-6 py-3 text-center text-sm font-semibold text-gray-600">
-                      معلومات الاتصال
-                    </th>
-                    <th className="px-6 py-3 text-center text-sm font-semibold text-gray-600">
-                      الفرع
-                    </th>
-                    <th className="px-6 py-3 text-center text-sm font-semibold text-gray-600">
-                      سنة الاستظهار
-                    </th>
-                    <th className="px-6 py-3 text-center text-sm font-semibold text-gray-600">
-                      حاضر هذه السنة
-                    </th>
-                    <th className="px-6 py-3 text-center text-sm font-semibold text-gray-600">
-                      الإجراءات
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100">
-                  {currentStudents.map((student) => (
-                    <tr
-                      key={student.id}
-                      className="hover:bg-gray-50 transition-colors block sm:table-row mb-4 sm:mb-0 border-b border-gray-100 last:border-0"
+          {!isLoggedIn ? (
+            <LogInPage />
+          ) : (
+            <>
+              <div className="mb-8">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                  <div>
+                    <h1 className="text-3xl font-bold text-gray-800 mb-2">
+                      إدارة المستظهرين
+                    </h1>
+                    <p className="text-gray-600">
+                      إدارة وتتبع جميع المستظهرين في المحضرة
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={() => {
+                        setShowAddModal(true);
+                        setNavBarShown(false);
+                      }}
+                      className="bg-gradient-to-r from-[#1b9174] to-green-600 hover:from-green-700 hover:to-green-800 text-white px-6 py-3 rounded-2xl flex items-center gap-2 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1"
                     >
-                      {/* Student Name - Always visible */}
-                      <td className="px-6 py-3 block sm:table-cell w-full sm:w-auto">
-                        <div className="flex items-center gap-3 justify-between sm:justify-start">
-                          <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-full flex items-center justify-center">
-                              {student.profileImage ? <img src={student.profileImage} alt={student.name}/> :<User className="text-white" size={14} />}
-                            </div>
-                            <div>
-                              <p className="font-semibold text-gray-800 text-sm">
-                                {student.fullName}
-                              </p>
-                              <p className="text-xs text-gray-500 hidden sm:block">
-                                رقم {student.memerNumber}
-                              </p>
-                            </div>
-                          </div>
-                          <div className="sm:hidden flex items-center gap-1">
-                            <button
-                              onClick={() => handleViewStudent(student)}
-                              className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                              title="عرض التفاصيل"
-                            >
-                              <Eye size={14} />
-                            </button>
-                            <button
-                              onClick={() => handleEditStudent(student)}
-                              className="p-1.5 text-[#1b9174] hover:bg-green-50 rounded-lg transition-colors"
-                              title="تعديل"
-                            >
-                              <Edit size={14} />
-                            </button>
-                            <button
-                              onClick={() => handleDeleteStudent(student.id)}
-                              className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                              title="حذف"
-                            >
-                              <Trash2 size={14} />
-                            </button>
-                            <button
-                              onClick={() => handleViewStudent(student)}
-                              className="p-1.5 text-yellow-600 hover:bg-yellow-100 rounded-lg transition-colors"
-                              title="Copy!"
-                            >
-                              <Copy size={14} />
-                            </button>
-                          </div>
-                        </div>
-                      </td>
-
-                      {/* Contact Info - Hidden on mobile */}
-                      <td className="px-6 py-3 hidden sm:table-cell">
-                        <div className="space-y-1">
-                          <div
-                            dir="ltr"
-                            className=" ltr text-left flex items-center gap-2 text-xs"
-                          >
-                            <span className="text-gray-400">📞</span>
-                            <span>{student.phone}</span>
-                          </div>
-                          <div
-                            dir="ltr"
-                            className="ltr text-left flex items-center gap-2 text-xs text-gray-500"
-                          >
-                            <span className="text-gray-400">✉️</span>
-                            <span className="truncate max-w-40">
-                              {student.email}
-                            </span>
-                          </div>
-                        </div>
-                      </td>
-
-                      {/* Branch - Hidden on mobile */}
-                      <td className="px-6 py-3 hidden sm:table-cell text-center">
-                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-[#b8ac8c] bg-opacity-20 text-white font-medium">
-                          {student.branchCenter}
-                        </span>
-                      </td>
-
-                      {/* Year - Hidden on mobile */}
-                      <td className="px-6 py-3 hidden sm:table-cell text-center">
-                        <span className="text-gray-800 font-medium text-sm">
-                          {student.memerYear}
-                        </span>
-                      </td>
-
-                      {/* Attendance - Stacked on mobile */}
-                      <td className="px-6 py-3 block sm:table-cell w-full sm:w-auto">
-                        <div className="flex justify-between items-center sm:justify-center">
-                          <span className="text-sm text-gray-600 sm:hidden">
-                            حاضر هذه السنة:
-                          </span>
-                          <AttendanceToggle
-                            isAttending={student.attendanceThisYear}
-                            onChange={() => toggleStudentAttendance(student.id)}
-                            loading={attendanceLoading.has(student.id)}
-                          />
-                        </div>
-                      </td>
-
-                      {/* Actions - Hidden on mobile (shown inline with name) */}
-                      <td className="px-6 py-3 hidden sm:table-cell ">
-                        <div className="flex items-center gap-1 justify-center">
-                          <button
-                            onClick={() => handleViewStudent(student)}
-                            className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                            title="عرض التفاصيل"
-                          >
-                            <Eye size={14} />
-                          </button>
-
-                          <button
-                            onClick={() => handleEditStudent(student)}
-                            className="p-1.5 text-[#1b9174] hover:bg-green-50 rounded-lg transition-colors"
-                            title="تعديل"
-                          >
-                            <Edit size={14} />
-                          </button>
-
-                          <button
-                            onClick={() => handleDeleteStudent(student.id)}
-                            className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                            title="حذف"
-                          >
-                            <Trash2 size={14} />
-                          </button>
-
-                          <button
-                            onClick={() => handleViewStudent(student)}
-                            className="p-1.5 text-yellow-600 hover:bg-yellow-100 rounded-lg transition-colors"
-                            title="Copy!"
-                          >
-                            <Copy size={14} />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            {/* Pagination */}
-            {totalPages > 1 && (
-              <div className="px-6 py-4 border-t border-gray-100 flex items-center justify-between">
-                <div className="text-sm text-gray-600">
-                  عرض {indexOfFirstStudent + 1} إلى{" "}
-                  {Math.min(indexOfLastStudent, filteredStudents.length)} من{" "}
-                  {filteredStudents.length} مستظهر
-                </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => handlePageChange(currentPage - 1)}
-                    disabled={currentPage === 1}
-                    className="p-2 rounded-lg border border-gray-200 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                  >
-                    <ChevronRight size={16} />
-                  </button>
-
-                  {/* Page Numbers */}
-                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                    let pageNum;
-                    if (totalPages <= 5) {
-                      pageNum = i + 1;
-                    } else if (currentPage <= 3) {
-                      pageNum = i + 1;
-                    } else if (currentPage >= totalPages - 2) {
-                      pageNum = totalPages - 4 + i;
-                    } else {
-                      pageNum = currentPage - 2 + i;
-                    }
-
-                    return (
-                      <button
-                        key={pageNum}
-                        onClick={() => handlePageChange(pageNum)}
-                        className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                          currentPage === pageNum
-                            ? "bg-[#1b9174] text-white"
-                            : "border border-gray-200 hover:bg-gray-50"
-                        }`}
-                      >
-                        {pageNum}
-                      </button>
-                    );
-                  })}
-
-                  <button
-                    onClick={() => handlePageChange(currentPage + 1)}
-                    disabled={currentPage === totalPages}
-                    className="p-2 rounded-lg border border-gray-200 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                  >
-                    <ChevronLeft size={16} />
-                  </button>
+                      <Plus size={20} />
+                      إضافة مستظهر جديد
+                    </button>
+                  </div>
                 </div>
               </div>
-            )}
-          </div>
+
+              {/* Statistics Cards */}
+              <div
+                ref={Statistics}
+                className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8"
+              >
+                <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+                  <div className="flex items-center gap-4">
+                    <div className="p-3 rounded-xl bg-green-50 text-[#1b9174]">
+                      <Users size={24} />
+                    </div>
+                    <div>
+                      <p className="text-2xl font-bold text-gray-800">
+                        {inView && (
+                          <CountUp
+                            start={0}
+                            end={students.length}
+                            duration={2}
+                            delay={0}
+                            separator=""
+                          />
+                        )}
+                      </p>
+                      <p className="text-gray-600 text-sm">إجمالي المستظهرين</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+                  <div className="flex items-center gap-4">
+                    <div className="p-3 rounded-xl bg-blue-50 text-blue-600">
+                      <GraduationCap size={24} />
+                    </div>
+                    <div>
+                      <p className="text-2xl font-bold text-gray-800">
+                        {inView && (
+                          <CountUp
+                            start={0}
+                            end={thisYearStudents}
+                            duration={2}
+                            delay={0}
+                          />
+                        )}
+                      </p>
+                      <p className="text-gray-600 text-sm">
+                        المستظهرون هذه السنة
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+                  <div className="flex items-center gap-4">
+                    <div className="p-3 rounded-xl bg-green-50 text-green-600">
+                      <CheckCircle size={24} />
+                    </div>
+                    <div>
+                      <p className="text-2xl font-bold text-gray-800">
+                        {inView && (
+                          <CountUp
+                            start={0}
+                            end={attendingThisYear}
+                            duration={2}
+                            delay={0}
+                          />
+                        )}
+                      </p>
+                      <p className="text-gray-600 text-sm">
+                        الحاضرون هذه السنة
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+                  <div className="flex items-center gap-4">
+                    <div className="p-3 rounded-xl bg-[#b8ac8c] bg-opacity-20 text-[#b8ac8c]">
+                      <MapPin size={24} />
+                    </div>
+                    <div>
+                      <p className="text-2xl font-bold text-gray-800">
+                        {inView && (
+                          <CountUp
+                            start={0}
+                            end={tartilMemNumber}
+                            duration={2}
+                            delay={0}
+                          />
+                        )}
+                      </p>
+                      <p className="text-gray-600 text-sm">
+                        المستظهرون ترتيليا
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Filters and Search */}
+              <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 mb-8 hover:shadow-md transition-shadow">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                  {/* Search */}
+                  <div className="relative">
+                    <div className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+                      <Search size={20} />
+                    </div>
+                    <input
+                      type="text"
+                      placeholder="البحث بالاسم، الايميل، أو رقم الهاتف..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="w-full pr-10 pl-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#1b9174] focus:border-transparent transition-all"
+                    />
+                  </div>
+
+                  {/* Branch Filter */}
+                  <div className="relative">
+                    <select
+                      value={filterBranch}
+                      onChange={(e) => setFilterBranch(e.target.value)}
+                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#1b9174] focus:border-transparent transition-all appearance-none bg-white"
+                    >
+                      <option value="">جميع الفروع</option>
+                      {branches.map((branch) => (
+                        <option key={branch} value={branch}>
+                          {branch}
+                        </option>
+                      ))}
+                    </select>
+                    <ChevronDown
+                      className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                      size={20}
+                    />
+                  </div>
+
+                  {/* Year Filter */}
+                  <div className="relative">
+                    <select
+                      value={filterYear}
+                      onChange={(e) => setFilterYear(e.target.value)}
+                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#1b9174] focus:border-transparent transition-all appearance-none bg-white"
+                    >
+                      <option value="">مستظهر سنة</option>
+                      {years.map((year) => (
+                        <option key={year} value={year.toString()}>
+                          {year}
+                        </option>
+                      ))}
+                    </select>
+                    <ChevronDown
+                      className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                      size={20}
+                    />
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex gap-2">
+                    <button className="flex-1 px-4 py-3 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors flex items-center justify-center gap-2">
+                      <Download size={20} />
+                      تصدير
+                    </button>
+                    <button className="flex-1 px-4 py-3 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors flex items-center justify-center gap-2">
+                      <Upload size={20} />
+                      استيراد
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Students Table */}
+              <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow">
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="bg-gray-50 border-b border-gray-100 hidden sm:table-header-group">
+                      <tr>
+                        <th className="px-6 py-3 text-center text-sm font-semibold text-gray-600">
+                          المستظهر
+                        </th>
+                        <th className="px-6 py-3 text-center text-sm font-semibold text-gray-600">
+                          معلومات الاتصال
+                        </th>
+                        <th className="px-6 py-3 text-center text-sm font-semibold text-gray-600">
+                          الفرع
+                        </th>
+                        <th className="px-6 py-3 text-center text-sm font-semibold text-gray-600">
+                          سنة الاستظهار
+                        </th>
+                        <th className="px-6 py-3 text-center text-sm font-semibold text-gray-600">
+                          حاضر هذه السنة
+                        </th>
+                        <th className="px-6 py-3 text-center text-sm font-semibold text-gray-600">
+                          الإجراءات
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
+                      {currentStudents.map((student) => (
+                        <tr
+                          key={student.id}
+                          className="hover:bg-gray-50 transition-colors block sm:table-row mb-4 sm:mb-0 border-b border-gray-100 last:border-0"
+                        >
+                          {/* Student Name - Always visible */}
+                          <td className="px-6 py-3 block sm:table-cell w-full sm:w-auto">
+                            <div className="flex items-center gap-3 justify-between sm:justify-start">
+                              <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 rounded-full flex items-center justify-center">
+                                  {student.profileImage ? (
+                                    <img
+                                      src={student.profileImage}
+                                      alt={student.name}
+                                    />
+                                  ) : (
+                                    <User className="text-white" size={14} />
+                                  )}
+                                </div>
+                                <div>
+                                  <p className="font-semibold text-gray-800 text-sm">
+                                    {student.fullName}
+                                  </p>
+                                  <p className="text-xs text-gray-500 hidden sm:block">
+                                    رقم {student.memerNumber}
+                                  </p>
+                                </div>
+                              </div>
+                              <div className="sm:hidden flex items-center gap-1">
+                                <button
+                                  onClick={() => handleViewStudent(student)}
+                                  className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                  title="عرض التفاصيل"
+                                >
+                                  <Eye size={14} />
+                                </button>
+                                <button
+                                  onClick={() => handleEditStudent(student)}
+                                  className="p-1.5 text-[#1b9174] hover:bg-green-50 rounded-lg transition-colors"
+                                  title="تعديل"
+                                >
+                                  <Edit size={14} />
+                                </button>
+                                <button
+                                  onClick={() =>
+                                    handleDeleteStudent(student.id)
+                                  }
+                                  className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                  title="حذف"
+                                >
+                                  <Trash2 size={14} />
+                                </button>
+                                <button
+                                  onClick={() => handleViewStudent(student)}
+                                  className="p-1.5 text-yellow-600 hover:bg-yellow-100 rounded-lg transition-colors"
+                                  title="Copy!"
+                                >
+                                  <Copy size={14} />
+                                </button>
+                              </div>
+                            </div>
+                          </td>
+
+                          {/* Contact Info - Hidden on mobile */}
+                          <td className="px-6 py-3 hidden sm:table-cell">
+                            <div className="space-y-1">
+                              <div
+                                dir="ltr"
+                                className=" ltr text-left flex items-center gap-2 text-xs"
+                              >
+                                <span className="text-gray-400">📞</span>
+                                <span>{student.phone}</span>
+                              </div>
+                              <div
+                                dir="ltr"
+                                className="ltr text-left flex items-center gap-2 text-xs text-gray-500"
+                              >
+                                <span className="text-gray-400">✉️</span>
+                                <span className="truncate max-w-40">
+                                  {student.email}
+                                </span>
+                              </div>
+                            </div>
+                          </td>
+
+                          {/* Branch - Hidden on mobile */}
+                          <td className="px-6 py-3 hidden sm:table-cell text-center">
+                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-[#b8ac8c] bg-opacity-20 text-white font-medium">
+                              {student.branchCenter}
+                            </span>
+                          </td>
+
+                          {/* Year - Hidden on mobile */}
+                          <td className="px-6 py-3 hidden sm:table-cell text-center">
+                            <span className="text-gray-800 font-medium text-sm">
+                              {student.memerYear}
+                            </span>
+                          </td>
+
+                          {/* Attendance - Stacked on mobile */}
+                          <td className="px-6 py-3 block sm:table-cell w-full sm:w-auto">
+                            <div className="flex justify-between items-center sm:justify-center">
+                              <span className="text-sm text-gray-600 sm:hidden">
+                                حاضر هذه السنة:
+                              </span>
+                              <AttendanceToggle
+                                isAttending={student.attendanceThisYear}
+                                onChange={() =>
+                                  toggleStudentAttendance(student.id)
+                                }
+                                loading={attendanceLoading.has(student.id)}
+                              />
+                            </div>
+                          </td>
+
+                          {/* Actions - Hidden on mobile (shown inline with name) */}
+                          <td className="px-6 py-3 hidden sm:table-cell ">
+                            <div className="flex items-center gap-1 justify-center">
+                              <button
+                                onClick={() => handleViewStudent(student)}
+                                className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                title="عرض التفاصيل"
+                              >
+                                <Eye size={14} />
+                              </button>
+
+                              <button
+                                onClick={() => handleEditStudent(student)}
+                                className="p-1.5 text-[#1b9174] hover:bg-green-50 rounded-lg transition-colors"
+                                title="تعديل"
+                              >
+                                <Edit size={14} />
+                              </button>
+
+                              <button
+                                onClick={() => handleDeleteStudent(student.id)}
+                                className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                title="حذف"
+                              >
+                                <Trash2 size={14} />
+                              </button>
+
+                              <button
+                                onClick={() => handleViewStudent(student)}
+                                className="p-1.5 text-yellow-600 hover:bg-yellow-100 rounded-lg transition-colors"
+                                title="Copy!"
+                              >
+                                <Copy size={14} />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Pagination */}
+                {totalPages > 1 && (
+                  <div className="px-6 py-4 border-t border-gray-100 flex items-center justify-between">
+                    <div className="text-sm text-gray-600">
+                      عرض {indexOfFirstStudent + 1} إلى{" "}
+                      {Math.min(indexOfLastStudent, filteredStudents.length)} من{" "}
+                      {filteredStudents.length} مستظهر
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => handlePageChange(currentPage - 1)}
+                        disabled={currentPage === 1}
+                        className="p-2 rounded-lg border border-gray-200 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      >
+                        <ChevronRight size={16} />
+                      </button>
+
+                      {/* Page Numbers */}
+                      {Array.from(
+                        { length: Math.min(5, totalPages) },
+                        (_, i) => {
+                          let pageNum;
+                          if (totalPages <= 5) {
+                            pageNum = i + 1;
+                          } else if (currentPage <= 3) {
+                            pageNum = i + 1;
+                          } else if (currentPage >= totalPages - 2) {
+                            pageNum = totalPages - 4 + i;
+                          } else {
+                            pageNum = currentPage - 2 + i;
+                          }
+
+                          return (
+                            <button
+                              key={pageNum}
+                              onClick={() => handlePageChange(pageNum)}
+                              className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                                currentPage === pageNum
+                                  ? "bg-[#1b9174] text-white"
+                                  : "border border-gray-200 hover:bg-gray-50"
+                              }`}
+                            >
+                              {pageNum}
+                            </button>
+                          );
+                        }
+                      )}
+
+                      <button
+                        onClick={() => handlePageChange(currentPage + 1)}
+                        disabled={currentPage === totalPages}
+                        className="p-2 rounded-lg border border-gray-200 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      >
+                        <ChevronLeft size={16} />
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+          {/* Page Header */}
         </main>
       )}
     </div>

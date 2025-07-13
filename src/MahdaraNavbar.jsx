@@ -128,11 +128,11 @@ const MahdaraNavbar = ({ setCurrentPage, currentPageFace }) => {
             ) : (
               <button
                 onClick={() => signIn()}
-                className="group bg-white text-[#1b9174] font-bold 
+                className="hidden group bg-white text-[#1b9174] font-bold 
                    py-1 px-2 sm:py-2 sm:px-4 
                    rounded-2xl hover:shadow-2xl 
                    transition-all duration-300 transform hover:scale-105 
-                   flex items-center justify-center gap-1 
+                   md:flex items-center justify-center gap-1 
                    text-base sm:text-sm
                    w-full max-w-xs sm:max-w-sm
                    touch-manipulation border-1 border-[#1b9174]"

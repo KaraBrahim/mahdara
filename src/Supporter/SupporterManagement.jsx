@@ -25,6 +25,8 @@ import supportersData from "./json.json";
 import SupporterForm from "./SupporterForm";
 import SupporterCard from "./SupporterCard";
 import AddSupporterForm from "./AddSupporterForm";
+import LogInPage from "../LogInPage";
+import { useAuth } from "../AuthContext";
 
 // Sample data for dropdowns
 const branches = ["فرع 1", "فرع 2", "فرع 3"];
@@ -34,6 +36,7 @@ const educationLevels = ["مستوى 1", "مستوى 2", "مستوى 3"];
 const workerNatures = ["متفرغ", "متطوع"];
 
 const SupporterManagement = ({ setNavBarShown, navBarShown }) => {
+  const { user, signIn, signOut, isSignedIn } = useAuth();
   const [supporters, setSupporters] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterBranch, setFilterBranch] = useState("");
@@ -191,6 +194,8 @@ const SupporterManagement = ({ setNavBarShown, navBarShown }) => {
   useEffect(()=> {
     setNavBarShown(!navBarShown)
   } , [showAddModal , showEditModal , showProfileModal]); */
+
+  const isLoggedIn = user && isSignedIn();
   return (
     <div
       className="font-tajwal min-h-screen bg-gradient-to-br from-[#F5FFFC] to-gray-50"
@@ -275,6 +280,8 @@ const SupporterManagement = ({ setNavBarShown, navBarShown }) => {
           {/* Main Content */}
           <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
             {/* Page Header */}
+            {!isLoggedIn ? <LogInPage /> : 
+            <>
             <div className="mb-8">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
@@ -639,6 +646,8 @@ const SupporterManagement = ({ setNavBarShown, navBarShown }) => {
                 </div>
               )}
             </div>
+            </>}
+            
           </main>
         </>
       )}
